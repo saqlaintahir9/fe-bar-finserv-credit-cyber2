@@ -1,0 +1,11 @@
+seed=42
+accounts=500 auth_events=3000 card_transactions=8000
+fraud_label=1: 362 (4.52%)
+declines=181 false_positive_declines=119
+ato_label=1 auth events=51
+demo_account=ACC-100042
+demo_auth={"event_id": "EVT-DEMO-ATO", "account_id": "ACC-100042", "ts": "2026-09-30T17:56:00+00:00", "device_id": "dev_new_91f2", "device_is_new": 1, "ip_geo": "GB-LON", "geo_is_new": 1, "auth_result": "success", "failed_attempts_1h": 4, "mfa_used": 0, "ato_label": 1}
+demo_txn={"txn_id": "TXN-DEMO-ATO", "account_id": "ACC-100042", "ts": "2026-09-30T18:00:00+00:00", "amount": 2318.47, "mcc": "5732", "merchant_country": "GB", "channel": "ecom", "pan_token": "tok_8238295cccb4d5b2", "decision": "approve", "fraud_label": 1}
+sample_account={"account_id": "ACC-100042", "open_date": "2025-01-02", "credit_limit": 2500, "segment": "premium", "home_geo": "US-NY", "email": "user100042@example.invalid", "pan_token": "tok_8238295cccb4d5b2"}
+sample_txn={"txn_id": "TXN-0000000", "account_id": "ACC-200418", "ts": "2026-09-18T00:40:00+00:00", "amount": 20.46, "mcc": "4511", "merchant_country": "US", "channel": "ecom", "pan_token": "tok_b2438663124bb087", "decision": "approve", "fraud_label": 0}
+pan_token_prefix=tok_ (no raw PAN generated)

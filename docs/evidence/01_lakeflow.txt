@@ -1,0 +1,44 @@
+workspace: e2-demo-field-eng
+catalog: fe_bar_meridian
+
+=== Lakeflow Spark Declarative Pipeline ===
+pipeline_name: meridian-fraud-risk
+pipeline_id: e4f6bb45-3722-4b75-8933-c87ef838312f
+state: IDLE
+latest_update_id: c40a8cc3-3307-48ec-9f2f-f78d0e52bf17
+latest_update_state: COMPLETED
+latest_update_creation_time: 2026-10-02T04:29:11.894Z
+target_schema: fe_bar_meridian.lakeflow_demo
+definition: pipelines/fraud_credit_risk.py + pipelines/pipeline.yml
+tables: bronze_auth_events, bronze_card_transactions, bronze_accounts,
+        silver_auth_events, silver_card_transactions, silver_accounts,
+        fused_features
+
+SDP gold (warehouse query):
+SELECT txn_id, account_id, amount, minutes_since_new_device_login, geo_mismatch_flag,
+       failed_logins_1h, reason_codes
+FROM fe_bar_meridian.lakeflow_demo.fused_features
+WHERE account_id = 'ACC-100042';
+
+TXN-DEMO-ATO | ACC-100042 | 2318.47 | 4.0 | 1 | 4 |
+  new_device_recent,geo_mismatch,failed_logins_burst,ato_signal
+
+=== SQL warehouse gold (scored serving path) ===
+table: fe_bar_meridian.shared_risk.fused_features
+TXN-DEMO-ATO | ACC-100042 | 2318.47 | 4.00 | 1 | 4 |
+  new_device_recent,geo_mismatch,failed_logins_burst,ato_signal | fraud_label=1
+
+=== Local silver expectations (src/run_gold_pipeline.py) ===
+{
+  "auth_valid_account_pass_pct": 100.0,
+  "tx_valid_txn_pass_pct": 100.0,
+  "acct_valid_pass_pct": 100.0,
+  "auth_in": 3000,
+  "auth_out": 3000,
+  "tx_in": 8000,
+  "tx_out": 8000,
+  "accts_in": 500,
+  "accts_out": 500
+}
+gold_rows=8000
+demo_rows=1

@@ -1,0 +1,15 @@
+bundle:
+  name: fe-bar-meridian-fraud-risk
+
+include:
+  - pipelines/pipeline.yml
+
+variables:
+  warehouse_id:
+    default: "72255d4cf9534448"
+
+targets:
+  e2_demo:
+    default: true
+    workspace:
+      host: https://e2-demo-field-eng.cloud.databricks.com

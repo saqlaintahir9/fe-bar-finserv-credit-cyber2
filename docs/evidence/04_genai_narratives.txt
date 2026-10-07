@@ -1,0 +1,63 @@
+model: AI_QUERY('databricks-claude-sonnet-4', ...)
+table: fe_bar_meridian.shared_risk.flagged_cases
+grounding: reason_codes + feature values only — NOT a Reg B / ECOA adverse-action letter
+
+--- 1 ---
+txn_id=TXN-DEMO-ATO account_id=ACC-100042
+reason_codes=new_device_recent,geo_mismatch,failed_logins_burst,ato_signal
+reason_narrative:
+A SOC analyst detected suspicious activity on account ACC-100042 involving a transaction of $2,318.47, triggered by multiple high-risk indicators including a new device accessing the account, geographic location inconsistencies, and a burst of failed login attempts.
+
+--- 2 ---
+txn_id=TXN-0000094 account_id=ACC-200107
+reason_codes=new_device_recent,geo_mismatch,failed_logins_burst,ato_signal
+reason_narrative:
+A SOC analyst detected suspicious activity on account ACC-200107 involving a $13.7 transaction that triggered multiple security alerts including a new device accessing the account, geographic location mismatch, and a burst of failed login attempts.
+
+--- 3 ---
+txn_id=TXN-0000197 account_id=ACC-200083
+reason_codes=new_device_recent,geo_mismatch
+reason_narrative:
+A new device was recently used to access account ACC-200083, and the transaction of $8.54 originated from a geographic location that does not match the account holder's typical usage patterns.
+
+--- 4 ---
+txn_id=TXN-0000204 account_id=ACC-200107
+reason_codes=new_device_recent,geo_mismatch,failed_logins_burst,ato_signal
+reason_narrative:
+A SOC analyst detected suspicious activity on account ACC-200107 involving a $21.74 transaction, where multiple security indicators were triggered including a new device, geographic inconsistencies, and a burst of failed login attempts.
+
+--- 5 ---
+txn_id=TXN-0000006 account_id=ACC-200277
+reason_codes=new_device_recent,failed_logins_burst
+reason_narrative:
+A new device was recently detected on account ACC-200277, followed by a burst of failed login attempts. This pattern suggests a potential unauthorized access attempt.
+
+--- 6 ---
+txn_id=TXN-0000078 account_id=ACC-200181
+reason_codes=new_device_recent
+reason_narrative:
+A new device was recently detected accessing account ACC-200181, triggering a security alert for unusual account activity associated with amount $26.66.
+
+--- 7 ---
+txn_id=TXN-0000110 account_id=ACC-200387
+reason_codes=new_device_recent,geo_mismatch
+reason_narrative:
+A new device was recently used to access account ACC-200387, and the transaction of $50.39 occurred from a geographic location that doesn't match typical usage patterns.
+
+--- 8 ---
+txn_id=TXN-0000053 account_id=ACC-200211
+reason_codes=new_device_recent,failed_logins_burst
+reason_narrative:
+A new device was recently detected accessing account ACC-200211, followed by a burst of failed login attempts.
+
+--- 9 ---
+txn_id=TXN-0000036 account_id=ACC-200083
+reason_codes=new_device_recent,geo_mismatch
+reason_narrative:
+A new device was recently used to access account ACC-200083, and the transaction of $11.2 occurred from a geographic location that does not match typical usage patterns.
+
+--- 10 ---
+txn_id=TXN-0000127 account_id=ACC-200083
+reason_codes=new_device_recent,geo_mismatch
+reason_narrative:
+A new device was recently registered on account ACC-200083, and a transaction for $36.57 was processed from a mismatched geographic location.

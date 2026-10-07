@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-10-02T19:15:00+00:00",
+  "default_account": "ACC-100042",
+  "hot_path": "GET /risk/ACC-100042",
+  "ml_panel": {
+    "risk_score": 0.9,
+    "model_version": "fused_gbm_v1",
+    "uc_model": "fe_bar_meridian.shared_risk.fused_fraud_gbm",
+    "top_contributing_features": [
+      {"feature": "Transaction amount", "value": 2318.47, "importance": 0.8347, "fired": "Yes"},
+      {"feature": "Minutes since new-device login", "value": 4.0, "importance": 0.1542, "fired": "Yes"},
+      {"feature": "Failed logins in last hour", "value": 4, "importance": 0.0093, "fired": "Yes"},
+      {"feature": "Geo mismatch (login vs home)", "value": 1, "importance": 0.0017, "fired": "Yes"},
+      {"feature": "Account-takeover (ATO) signal", "value": 1, "importance": 0.0, "fired": "Yes"}
+    ]
+  },
+  "case": {
+    "account_id": "ACC-100042",
+    "txn_id": "TXN-DEMO-ATO",
+    "risk_score": 0.9,
+    "model_version": "fused_gbm_v1",
+    "reason_codes": [
+      "new_device_recent",
+      "geo_mismatch",
+      "failed_logins_burst",
+      "ato_signal"
+    ],
+    "amount": 2318.47,
+    "as_of": "2026-09-30 18:00:00+00:00",
+    "reason_narrative": "A new device was registered on account ACC-100042 just 4 minutes before a transaction of $2318.47 was attempted, triggering multiple risk indicators including geographic inconsistencies and a burst of failed login attempts. The combination of the recently added device, location mismatch, failed authentication patterns, and account takeover signals suggests potential fraudulent activity requiring immediate investigation."
+  }
+}

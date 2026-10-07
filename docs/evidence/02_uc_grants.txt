@@ -1,0 +1,37 @@
+workspace: e2-demo-field-eng
+catalog: fe_bar_meridian
+
+=== Column masks (live SELECT) ===
+SELECT account_id, email, pan_token
+FROM fe_bar_meridian.credit.silver_accounts
+WHERE account_id = 'ACC-100042';
+
+ACC-100042 | us***@***.invalid | tok_****d5b2
+
+Functions:
+  fe_bar_meridian.shared_risk.mask_email
+  fe_bar_meridian.shared_risk.mask_pan
+
+Tags:
+  credit.silver_accounts pii=email division=credit
+  cyber.silver_auth_events division=cyber
+  shared_risk.fused_features division=shared
+
+=== Table privileges (system.information_schema.table_privileges) ===
+App service principal 00734258-f596-43ed-87a2-390995cde48f has SELECT on:
+  fe_bar_meridian.credit.bronze_accounts
+  fe_bar_meridian.credit.bronze_card_transactions
+  fe_bar_meridian.credit.silver_accounts
+  fe_bar_meridian.cyber.bronze_auth_events
+  fe_bar_meridian.shared_risk.fused_features
+  fe_bar_meridian.shared_risk.flagged_cases
+Owner principal retains ALL_PRIVILEGES / MANAGE.
+
+=== Row-filter trade-off (text) ===
+Binding a Cyber-vs-Credit row filter on fused_features would hide ACC-100042 from the
+Databricks App SP and break the Command Center demo. Division separation is enforced with
+column masks + UC tags + schema split (cyber | credit | shared_risk). The fused *score*
+is what is shared, not raw PAN.
+
+Lineage: bronze (volume files) -> silver (expectations) -> gold fused_features ->
+MLflow model fe_bar_meridian.shared_risk.fused_fraud_gbm -> Lakebase risk_scores -> App.

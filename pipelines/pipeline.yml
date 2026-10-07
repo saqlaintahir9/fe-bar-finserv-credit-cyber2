@@ -1,0 +1,17 @@
+# Databricks Asset Bundle fragment — Lakeflow Declarative Pipeline
+# Catalog/schemas must exist (created in notebook 02 / workspace setup).
+
+resources:
+  pipelines:
+    meridian_fraud_risk:
+      name: meridian-fraud-risk
+      catalog: fe_bar_meridian
+      schema: lakeflow_demo
+      serverless: true
+      development: true
+      libraries:
+        - file:
+            path: ./fraud_credit_risk.py
+      configuration:
+        bpa.catalog: fe_bar_meridian
+        bpa.landing: /Volumes/fe_bar_meridian/shared_risk/landing

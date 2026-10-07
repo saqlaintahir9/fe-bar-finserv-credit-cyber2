@@ -1,0 +1,20 @@
+command:
+  - "sh"
+  - "-c"
+  - "streamlit run app.py --server.port ${PORT:-8501} --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false"
+
+resources:
+  - name: sql-warehouse
+    sql_warehouse:
+      id: "72255d4cf9534448"
+      permission: CAN_USE
+
+env:
+  - name: CATALOG
+    value: "fe_bar_meridian"
+  - name: DEMO_ACCOUNT
+    value: "ACC-100042"
+  - name: BPA_WAREHOUSE_ID
+    value: "72255d4cf9534448"
+  - name: DATABRICKS_WAREHOUSE_ID
+    value: "72255d4cf9534448"

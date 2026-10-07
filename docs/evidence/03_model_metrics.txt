@@ -1,0 +1,42 @@
+{
+  "model_version": "fused_gbm_v1",
+  "uc_model": "fe_bar_meridian.shared_risk.fused_fraud_gbm",
+  "uc_model_versions_ready": [3, 4],
+  "mlflow_run_id_v4": "087418fa11fa412ead0411aa9d862af9",
+  "mlflow_run_id_v3": "feff66bd78534de59bf3a5a00693d9bf",
+  "status": "READY",
+  "features": [
+    "amount",
+    "minutes_since_new_device_login",
+    "geo_mismatch_flag",
+    "failed_logins_1h",
+    "recent_ato_label",
+    "device_is_new"
+  ],
+  "feature_importances": {
+    "amount": 0.8347,
+    "minutes_since_new_device_login": 0.1542,
+    "failed_logins_1h": 0.0093,
+    "geo_mismatch_flag": 0.0017,
+    "recent_ato_label": 0.0,
+    "device_is_new": 0.0
+  },
+  "roc_auc": 0.7719662594531704,
+  "precision_at_0_5": 0.15789473684210525,
+  "recall_at_0_5": 0.03333333333333333,
+  "confusion_matrix": [
+    [1894, 16],
+    [87, 3]
+  ],
+  "n_train": 6000,
+  "n_test": 2000,
+  "demo_txn_id": "TXN-DEMO-ATO",
+  "demo_account_id": "ACC-100042",
+  "demo_risk_score": 0.9,
+  "reason_codes": [
+    "new_device_recent",
+    "geo_mismatch",
+    "failed_logins_burst",
+    "ato_signal"
+  ]
+}

@@ -1,0 +1,47 @@
+hot_path: GET /risk/ACC-100042
+instance: fe-bar-meridian (AVAILABLE)
+uid: dd3f124f-b831-4729-be39-8810a743ffd6
+pg_version: PG_VERSION_16
+read_write_dns: ep-floral-star-d1i8ynxt.database.us-west-2.cloud.databricks.com
+uc_catalog: fe_bar_meridian_lb.public.risk_scores
+
+=== Payload (Lakebase row, queried via UC federation) ===
+account_id=ACC-100042
+txn_id=TXN-DEMO-ATO
+risk_score=0.9
+reason_codes=new_device_recent,geo_mismatch,failed_logins_burst,ato_signal
+amount=2318.47
+model_version=fused_gbm_v1
+
+JSON:
+{
+  "account_id": "ACC-100042",
+  "txn_id": "TXN-DEMO-ATO",
+  "score": 0.9,
+  "reason_codes": [
+    "new_device_recent",
+    "geo_mismatch",
+    "failed_logins_burst",
+    "ato_signal"
+  ],
+  "amount": 2318.47,
+  "as_of": "2026-09-30 18:00:00+00:00",
+  "model_version": "fused_gbm_v1",
+  "hot_path": "GET /risk/ACC-100042",
+  "store": "Lakebase Postgres fe-bar-meridian"
+}
+
+=== Timed lookups ===
+1) In-process PK lookup (sqlite stand-in of the same contract):
+   lookup_ms=0.021
+   This is the shape of the auth-path call (single key, no join).
+
+2) Client laptop → us-west-2 Lakebase (includes WAN RTT; NOT the auth SLA):
+   lookup_ms_p50=87.430
+   lookup_ms_p99=390.450
+   n=20
+   Do not use this as the <50 ms p99 claim. The SLA is in-region app-to-Lakebase,
+   not a laptop on another continent talking to Postgres.
+
+3) Warehouse SQL against fe_bar_meridian_lb is federation, ~seconds, and is
+   explicitly NOT the hot path.

@@ -1,0 +1,14 @@
+INTERNAL_C1_MAPPING.md
+.databricks/
+app/.databricks/
+data/
+presentations/
+*.pdf
+*.token
+.env
+.env.*
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+.DS_Store
