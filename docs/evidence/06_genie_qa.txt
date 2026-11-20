@@ -1,7 +1,7 @@
 Dedicated Genie Space
 space_id: 01f1be1c7bba135f8491305e4038c5f4
 title: Meridian Fraud and Credit Risk
-warehouse_id: 72255d4cf9534448
+warehouse_id: 067eaf1841fd4910 (re-pointed 2026-11-20; original run below used 72255d4cf9534448)
 url: https://e2-demo-field-eng.cloud.databricks.com/genie/rooms/01f1be1c7bba135f8491305e4038c5f4
 
 Q: Show ATO-linked cases for ACC-100042 including reason_codes.

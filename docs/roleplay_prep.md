@@ -1,43 +1,35 @@
-# Demo and role-play notes
+# Role-play notes — Alex Morgan and Shreya
 
-Two personas in the room at once. Walk the solution once, make the value case, then field
-objections. Expect to **switch altitude mid-answer**.
+The full timed script is in [`talk_track.md`](talk_track.md). This page is the one-glance version.
 
-## Opening frame (demo setup — say this first)
-"Meridian Bank is a large card issuer: about 40 million authorizations a month. It loses money
-twice at authorization — fraud slips through, and good customers get declined — because Cyber
-sees the account-takeover and Credit never gets that signal in the auth window. I'll follow one
-account, ACC-100042, through the fused score, and land what that means for fraud-loss bps and
-false-positive declines."
+## Who's in the room
+| | Alex Morgan — business | Shreya — technical |
+|---|---|---|
+| Accountable for | Fraud loss, false-positive declines, customer experience | Authorization platform, data, security, model risk |
+| Wants to hear | Dollars, risk, time to value | Latency, governance, integration, how good the model is |
+| Chapters for them | 1 The case, 4 Ask the book | 2 Speed, 3 Governance |
+| Close every answer with | The dollar or customer impact | What it means for the business |
 
-## Demo spine
-1. **Tell:** ACC-100042, new device + new geo, spend four minutes later.
-2. **Show:** Command Center → **0.90** / `fused_gbm_v1` / top features → reason_codes → narrative grounded in those codes → Genie on that account.
-3. **Tell:** loss avoided; same signal cuts over-declines.
+## Rubric checklist
+- **Demo setup:** agenda and time contract (slide 2), confirm priorities (slide 3), the problem (slide 4), "what you're about to see" with four things to watch (slide 5).
+- **Tell-show-tell:** each of the four chapters opens with one sentence of what they'll see, shows it, and closes with one sentence of what it means. Slide 11 is the closing "tell" for the whole demo.
+- **Value:** $7M fraud avoided + $4–6M recovered declines = $11–13M. 2 ms against a 50 ms budget. Always tied to the person who asked.
+- **Delivery:** about 140 words a minute, pause after numbers, name the persona when switching, no filler.
+- **Next steps:** three owners, three dates, and a confirmed date for the scoping session before hanging up.
 
----
+## Opening questions (use their answers all call)
+- Alex: "Is the bigger pressure right now fraud loss, or the good customers we're declining?"
+- Shreya: "What would stop this from going near the authorization path on your side?"
 
-## Business stakeholder (executive who funds it) — likely objections
-
-| Objection | Answer (executive altitude) |
+## Hard objections
+| Objection | Answer |
 |---|---|
-| "What's the ROI / payback?" | Dual-margin: ~$7M fraud avoided + $4–6M revenue recovered = ~$11–13M/yr. 6-week pilot, measured in shadow mode before we touch a single live decline. |
-| "What's the risk if the model is wrong?" | Shadow mode first. ML is paired with deterministic **reason_codes** (velocity, geo-impossible, new device). GenAI never writes the legal decline letter — codes and features do. |
-| "Time to value?" | Pilot on one segment in 6 weeks. It's self-contained — no dependency on other migrations. |
-| "Why not buy a fraud vendor?" | Vendors score transactions in a silo; the differentiator is fusing *your* Cyber ATO signal into the auth path on data you already govern — and you keep the model and the data. |
+| Alex: "What if the model is wrong?" | Shadow mode first. It blocks nothing until fraud loss is down and false declines aren't up on your traffic. |
+| Alex: "Why not our fraud vendor?" | The vendor scores the transaction on its own. The gap is your own Cyber takeover signal reaching the decision. You keep the data and the model. |
+| Shreya: "How good is the model really?" | Holdout ROC-AUC about 0.77, modest precision and recall at 0.5. Not production-ready on synthetic data, which is exactly why the pilot is shadow mode with a threshold you tune. |
+| Shreya: "Is 2 ms real?" | Measured from the deployed Databricks App to Lakebase, 20 lookups per page load. From a laptop over the internet it's about 80 ms, which is network distance, not the database. |
+| Shreya: "Row-level security?" | Column masks and separate schemas today. A row filter on the combined table is next; it would have hidden the demo account from the app. |
 
-## Technical stakeholder (architect / data lead) — likely objections
-
-| Objection | Answer (technical altitude) |
-|---|---|
-| "Latency — a lakehouse query can't sit in the auth path." | Correct — that's why gold features + score sync to **Lakebase** (Postgres); the auth service does a single key lookup, <50 ms p99. The lakehouse does the heavy compute off the hot path. |
-| "Data quality?" | Lakeflow expectations gate every bronze→silver→gold hop; bad rows quarantined, pass-rate is committed evidence. |
-| "Security / PII — Cyber and Credit data together?" | Unity Catalog column masking on PAN/SSN and row-level separation by division. The *fused score* is shared, not the raw PII. Full lineage for audit. |
-| "Model governance for exams?" | MLflow + UC registry (SR 11-7); versioned scores; **reason_codes** are the Reg B trail. GenAI is analyst presentation only. |
-| "How does it integrate with card rails?" | Auth service adds `GET /risk/{account_id}` to Lakebase; no change to the rails. |
-| "Freshness of fused features?" | Auth events are streaming / short-trigger; txns micro-batch. Hot path is a key lookup, not a join. |
-
-## If the room shifts
-- Business asks → lead with $ and risk, one sentence of how.
-- Technical asks → give the real mechanism (Lakebase lookup, UC masking, MLflow) without
-  losing the exec — close each technical answer with the business consequence.
+## Time checks
+7:00 in the demo · 19:00 recapping · 26:00 asking for next steps · 28:00 done.
+If behind: drop the optional Genie question, then shorten chapter 3.

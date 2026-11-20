@@ -6,6 +6,7 @@ import json
 import os
 import sqlite3
 import time
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -17,8 +18,13 @@ CATALOG = os.environ.get("CATALOG", "fe_bar_meridian")
 WAREHOUSE_ID = (
     os.environ.get("DATABRICKS_WAREHOUSE_ID")
     or os.environ.get("BPA_WAREHOUSE_ID")
-    or "72255d4cf9534448"
+    or ""
 ).strip()
+LAKEBASE_INSTANCE = os.environ.get("LAKEBASE_INSTANCE", "fe-bar-meridian")
+GENIE_URL = os.environ.get(
+    "GENIE_URL",
+    "https://e2-demo-field-eng.cloud.databricks.com/genie/rooms/01f1be1c7bba135f8491305e4038c5f4",
+)
 ROOT = Path(__file__).resolve().parent
 GOLD = next(
     (
@@ -268,6 +274,70 @@ def sqlite_lookup() -> dict | None:
     }
 
 
+def lakebase_lookup(n: int = 20) -> dict | None:
+    """Time the auth-path key lookup against Lakebase from inside the app (in-region)."""
+    host = os.environ.get("PGHOST")
+    if not host:
+        return None
+    import psycopg2
+
+    w = _workspace()
+    cred = w.database.generate_database_credential(
+        request_id=str(uuid.uuid4()), instance_names=[LAKEBASE_INSTANCE]
+    )
+    conn = psycopg2.connect(
+        host=host,
+        port=int(os.environ.get("PGPORT", "5432")),
+        dbname=os.environ.get("PGDATABASE", "databricks_postgres"),
+        user=os.environ.get("PGUSER") or os.environ.get("DATABRICKS_CLIENT_ID"),
+        password=cred.token,
+        sslmode=os.environ.get("PGSSLMODE", "require"),
+        connect_timeout=15,
+    )
+    sql = (
+        "SELECT account_id, txn_id, risk_score, reason_codes, amount, as_of, model_version "
+        "FROM risk_scores WHERE account_id = %s"
+    )
+    times, row = [], None
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, (DEMO,))
+            cur.fetchone()
+            for _ in range(n):
+                t0 = time.perf_counter()
+                cur.execute(sql, (DEMO,))
+                row = cur.fetchone()
+                times.append((time.perf_counter() - t0) * 1000)
+    finally:
+        conn.close()
+    if not row:
+        return None
+    times.sort()
+    return {
+        "account_id": row[0],
+        "txn_id": row[1],
+        "score": float(row[2]),
+        "reason_codes": row[3].split(",") if row[3] else [],
+        "amount": float(row[4]),
+        "as_of": str(row[5]),
+        "model_version": row[6],
+        "hot_path": f"GET /risk/{DEMO}",
+        "store": f"Lakebase Postgres {LAKEBASE_INSTANCE}",
+        "lookup_ms_p50": round(times[len(times) // 2], 2),
+        "lookup_ms_p99": round(times[-1], 2),
+        "n": n,
+    }
+
+
+def recommended_action(score: float, codes: list[str]) -> tuple[str, str]:
+    codes = set(codes or [])
+    if score >= 0.8 and {"new_device_recent", "ato_signal"} & codes:
+        return "Hold + step-up authentication", "ATO signal fired within minutes of the spend; verify the cardholder before approving."
+    if score >= 0.5:
+        return "Escalate to fraud analyst", "Elevated risk without a confirmed ATO pattern; review before the next authorization."
+    return "Approve", "No fused Cyber signal; approve and avoid a false-positive decline."
+
+
 def render_ml_panel(case: dict, card: dict) -> None:
     score = case.get("risk_score")
     if score is None:
@@ -303,19 +373,15 @@ st.set_page_config(page_title="Fraud & Credit Risk Command Center", layout="wide
 st.title("Fraud & Credit Risk Command Center")
 st.caption("Meridian Bank · fused Cyber ATO + Credit auth · synthetic data · ACC-100042")
 
-col1, col2, col3 = st.columns(3)
-col1.metric("Fraud loss avoided (illustrative)", "$7.0M")
-col2.metric("FP decline target", "−30%")
-col3.metric("Auth lookup SLA", "<50 ms p99 (in-region)")
-
-division = st.radio("Division view", ["Shared", "Cyber", "Credit"], horizontal=True)
-if division == "Cyber":
-    st.info("Cyber view: ATO / device / geo signals. Fused score is shared; PAN stays masked.")
-elif division == "Credit":
-    st.info("Credit view: decisioning + fused score. Raw security columns stay masked.")
+st.markdown("#### 1 · The business outcome")
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Net fraud loss today", "$35M / yr", "−20% target → ~$7.0M avoided", delta_color="off")
+col2.metric("False declines : fraud", "13 : 1", "−30% target → ~$4–6M recovered", delta_color="off")
+col3.metric("Combined (dual-margin)", "$11–13M / yr", "illustrative, synthetic scale", delta_color="off")
+col4.metric("Auth lookup SLA", "<50 ms p99", "in-region Lakebase", delta_color="off")
 
 cases = load_cases()
-st.subheader("Case queue")
+st.markdown("#### 2 · Fraud Ops case queue")
 queue = [
     {
         "account_id": c.get("account_id"),
@@ -331,24 +397,40 @@ queue = [
 st.dataframe(queue, use_container_width=True, hide_index=True)
 
 demo_case = next((c for c in cases if c["txn_id"] == "TXN-DEMO-ATO"), cases[0] if cases else {})
+
+st.markdown(f"#### 3 · Case detail: {DEMO}")
+t1, t2, t3 = st.columns(3)
+t1.markdown("**T0** · new device + new geo login\n\n`cyber.auth_events`")
+t2.markdown("**T0 + 4 min** · $2,318.47 e-com spend\n\n`credit.card_transactions`")
+t3.markdown("**Fused** · scored in the auth window\n\n`shared_risk.fused_features`")
 render_ml_panel(demo_case, card)
 
-st.subheader("Tell-show-tell: ACC-100042")
-st.json(
-    {
-        "account_id": demo_case.get("account_id"),
-        "txn_id": demo_case.get("txn_id"),
-        "risk_score": demo_case.get("risk_score") or card.get("demo_risk_score"),
-        "model_version": demo_case.get("model_version") or card.get("model_version"),
-        "top_features": top_contributors(demo_case, card),
-        "reason_codes": demo_case.get("reason_codes"),
-        "reason_narrative": demo_case.get("reason_narrative"),
-        "decision": demo_case.get("decision"),
-        "as_of": demo_case.get("as_of"),
-    }
-)
+score = float(demo_case.get("risk_score") or card.get("demo_risk_score", 0.9))
+codes = demo_case.get("reason_codes") or []
+action, why = recommended_action(score, codes)
+st.markdown("**Reason codes (adverse-action / exam source of truth)**")
+st.code(", ".join(codes) or "none", language=None)
+st.markdown("**Analyst narrative (AI_QUERY, grounded in the reason codes — not the Reg B letter)**")
+st.info(demo_case.get("reason_narrative") or NARRATIVE)
+st.markdown("**Recommended analyst action**")
+st.success(f"{action} — {why}")
 
-hot = sqlite_lookup() or {}
+st.markdown("#### 4 · Auth-path lookup: `GET /risk/ACC-100042`")
+live = None
+try:
+    live = lakebase_lookup()
+except Exception as exc:
+    print(f"lakebase_lookup error: {exc}", flush=True)
+    st.warning(f"Lakebase lookup unavailable ({exc}); showing the contract from gold.")
+if live:
+    l1, l2, l3 = st.columns(3)
+    l1.metric("Lookup p50 (app → Lakebase)", f"{live['lookup_ms_p50']} ms")
+    l2.metric("Lookup p99 (app → Lakebase)", f"{live['lookup_ms_p99']} ms")
+    l3.metric("Store", "Lakebase Postgres")
+    st.caption(f"{live['n']} timed primary-key lookups from this Databricks App to `{LAKEBASE_INSTANCE}`. No warehouse query, no join.")
+    print(f"lakebase_lookup p50_ms={live['lookup_ms_p50']} p99_ms={live['lookup_ms_p99']} n={live['n']}", flush=True)
+
+hot = live or sqlite_lookup() or {}
 hot.setdefault("account_id", DEMO)
 hot.setdefault("score", demo_case.get("risk_score") or card.get("demo_risk_score"))
 hot.setdefault("reason_codes", demo_case.get("reason_codes"))
@@ -356,9 +438,21 @@ hot.setdefault("narrative", demo_case.get("reason_narrative"))
 hot.setdefault("model_version", demo_case.get("model_version") or card.get("model_version"))
 hot.setdefault("as_of", demo_case.get("as_of"))
 hot.setdefault("hot_path", f"GET /risk/{DEMO}")
-hot["top_features"] = top_contributors(demo_case, card)
-st.subheader("Hot-path contract GET /risk/ACC-100042")
+hot["recommended_action"] = action
 st.code(json.dumps(hot, indent=2, default=str), language="json")
+
+st.markdown("#### 5 · Governance: same score, different view per division")
+division = st.radio("Division view", ["Shared", "Cyber", "Credit"], horizontal=True)
+if division == "Cyber":
+    st.info("Cyber view: ATO / device / geo signals plus the fused score. PAN and email stay masked by Unity Catalog.")
+elif division == "Credit":
+    st.info("Credit view: decisioning columns plus the fused score. Raw security signals stay in the cyber schema.")
+else:
+    st.info("Shared view: fused score and reason codes only. This is what both divisions are allowed to see.")
+
+st.markdown("#### 6 · Ask the book in plain English")
+st.markdown(f"Genie Space: **Meridian Fraud and Credit Risk** — [open Genie]({GENIE_URL})")
+st.code("Show ATO-linked cases for ACC-100042, including reason codes and narrative.", language=None)
 
 payload = {
     "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -366,6 +460,5 @@ payload = {
     "cases": cases[:5],
     "hot_path": hot,
 }
-st.caption("Genie: Show ATO-linked cases for ACC-100042")
 if st.checkbox("Print case-queue JSON"):
     st.text(json.dumps(payload, indent=2, default=str))

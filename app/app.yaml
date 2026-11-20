@@ -3,18 +3,18 @@ command:
   - "-c"
   - "streamlit run app.py --server.port ${PORT:-8501} --server.address 0.0.0.0 --server.enableCORS false --server.enableXsrfProtection false"
 
-resources:
-  - name: sql-warehouse
-    sql_warehouse:
-      id: "72255d4cf9534448"
-      permission: CAN_USE
-
 env:
   - name: CATALOG
     value: "fe_bar_meridian"
   - name: DEMO_ACCOUNT
     value: "ACC-100042"
-  - name: BPA_WAREHOUSE_ID
-    value: "72255d4cf9534448"
   - name: DATABRICKS_WAREHOUSE_ID
-    value: "72255d4cf9534448"
+    valueFrom: "sql-warehouse"
+  - name: LAKEBASE_INSTANCE
+    value: "fe-bar-meridian"
+  - name: PGHOST
+    value: "ep-lively-cake-d1lf2pgf.database.us-west-2.cloud.databricks.com"
+  - name: PGDATABASE
+    value: "databricks_postgres"
+  - name: GENIE_URL
+    value: "https://e2-demo-field-eng.cloud.databricks.com/genie/rooms/01f1be1c7bba135f8491305e4038c5f4"

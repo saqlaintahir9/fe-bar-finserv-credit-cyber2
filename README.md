@@ -12,7 +12,7 @@ Synthetic data only. PANs are tokens (`tok_…`). No real customer data.
 Model score **0.90**, version **`fused_gbm_v1`**.
 
 **Repo:** https://github.com/saqlaintahir9/fe-bar-finserv-credit-cyber2  
-**Deck:** [`DECK.md`](DECK.md)
+**Deck:** [`DECK.md`](DECK.md) · [`DECK.pptx`](DECK.pptx) (speaker notes) · **Talk track:** [`docs/talk_track.md`](docs/talk_track.md)
 
 ## Why this build
 
@@ -62,10 +62,10 @@ cd app && pip install -r requirements.txt && streamlit run app.py
 | Resource | Id / name |
 |---|---|
 | Catalog | `fe_bar_meridian` |
-| SQL warehouse | `fe-bar-meridian` (`72255d4cf9534448`) |
+| SQL warehouse | `fe-bar-meridian` (`067eaf1841fd4910`) |
 | SQL gold | `fe_bar_meridian.shared_risk.fused_features` |
 | Lakeflow SDP | `meridian-fraud-risk` (`e4f6bb45-3722-4b75-8933-c87ef838312f`) → `lakeflow_demo` |
-| Lakebase | instance `fe-bar-meridian`; UC `fe_bar_meridian_lb.public.risk_scores` |
+| Lakebase | instance `fe-bar-meridian`; UC `fe_bar_meridian_lb.public.risk_scores`; in-app lookup p50 **2.1 ms** |
 | UC model | `fe_bar_meridian.shared_risk.fused_fraud_gbm` versions **3–4 READY** |
 | Genie Space | [Meridian Fraud and Credit Risk](https://e2-demo-field-eng.cloud.databricks.com/genie/rooms/01f1be1c7bba135f8491305e4038c5f4) |
 | Databricks App | [fe-bar-meridian-cmd](https://fe-bar-meridian-cmd-1444828305810485.aws.databricksapps.com) |

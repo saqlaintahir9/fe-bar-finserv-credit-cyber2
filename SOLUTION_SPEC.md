@@ -3,7 +3,8 @@
 **Industry:** Financial Services — consumer credit card issuer / cloud-native bank
 **Customer (synthetic):** *Meridian Bank*
 **Issuer scale (synthetic):** large US card issuer — **~$50B** annual card volume, **~40M** authorizations/month
-**Divisions in scope:** Credit (Card & Risk Tech) + Cyber (Fraud / Security Operations)
+**Divisions in scope:** Credit (Card & Risk Tech) + Cyber (Fraud / Security Operations)  
+**Accountable executives (synthetic titles):** **Chief Risk Officer** (net fraud loss bps), **Head of Card Risk** (false-positive decline rate), **Head of Fraud Operations** (ATO MTTD and analyst queue)
 **FE Bar domains targeted:** Product · Industry · Build + AI Mindset · Customer Skills
 **Industry Outcome Map (anchor):** Financial Services — **fraud-loss reduction + credit decision quality** (authorization false-positive rate), with SOC analyst productivity as a supporting outcome
 
@@ -44,19 +45,18 @@ ranges — used to frame the value story, not claimed as any real customer's num
 
 **Pilot success (also the deck ask):** 6-week shadow-mode pilot on one card segment — **≥15% fraud-loss reduction with no increase in false-positive declines**, measured on live traffic **before** any decline decision changes.
 
-| KPI | Owner | Baseline (illustrative) | Target | Annualized value |
+| KPI | Compensated owner | Baseline (illustrative) | Target | Annualized value |
 |---|---|---|---|---|
-| **Net fraud loss (bps of volume)** | Credit + Cyber | ~7 bps → $35M/yr | −20% | **~$7.0M avoided** |
-| **False-positive decline rate** | Credit | 1 fraud : ~13 false declines | −30% | **~$4–6M recovered revenue + lower attrition** |
-| **Authorization decision latency** | Credit (Risk Tech) | 120–300 ms | **&lt;50 ms p99** | protects auth SLA / interchange |
-| **ATO mean-time-to-detect (MTTD)** | Cyber | minutes–hours | **&lt;1 s in auth path** | shrinks fraud dwell time |
-| **Analyst self-serve ratio** *(supporting, platform)* | Both | ~30% | **&gt;80% via Genie** | **~1.5–2 FTE of analyst/eng time** |
-| **Audit-evidence time** | Risk/Compliance | days | **minutes (UC lineage + reason codes)** | exam readiness |
-| **UC-governed share of in-scope tables** *(supporting)* | Platform | partial | **100% masked & lineage-tracked** | advances UC adoption |
+| **Net fraud loss (bps of volume)** | **Chief Risk Officer** | ~7 bps → $35M/yr | −20% | **~$7.0M avoided** |
+| **False-positive decline rate** | **Head of Card Risk** | 1 fraud : ~13 false declines | −30% | **~$4–6M recovered revenue + lower attrition** |
+| **Authorization decision latency** | Head of Card Risk Tech | 120–300 ms | **&lt;50 ms p99** | protects auth SLA / interchange |
+| **ATO mean-time-to-detect (MTTD)** | **Head of Fraud Operations** | minutes–hours | **&lt;1 s in auth path** | shrinks fraud dwell time |
+| **Analyst self-serve ratio** *(supporting)* | Head of Fraud Operations | ~30% | **&gt;80% via Genie** | **~1.5–2 FTE back on the queue** |
+| **Audit-evidence time** | CRO / Compliance | days | **minutes (UC lineage + reason codes)** | exam readiness |
+| **UC-governed share of in-scope tables** *(supporting)* | Platform (CRO-sponsored) | partial | **100% masked & lineage-tracked** | exam and sharing posture |
 
-**Executive framing:** this is a *dual-margin* play — it reduces loss (Cyber/Credit) **and**
-grows revenue (fewer good customers declined), while improving regulator and auditor posture.
-Lead with **loss bps + FP rate (~$11–13M/yr combined)**; Genie/UC are how, not the headline.
+**Executive framing:** dual-margin on the **CRO's loss-bps line** and the **Head of Card Risk FP rate**
+(~$11–13M/yr combined). Genie/UC are how; those two scorecards are what they fund.
 
 ---
 
@@ -223,9 +223,31 @@ Notebooks are committed with cell output. Query dumps, metrics, and Genie answer
 
 ## 9. Presentation deck
 
-See `DECK.md` for the business deck (outcome first, then KPIs, then architecture).
+See `DECK.md`. Room: CRO + Head of Fraud Operations (Card Risk if present). Outcome first.
 
 ## 10. Role-play prep
 
-See `docs/roleplay_prep.md` for the two personas, objections, and altitude switching.
-Open on **`ACC-100042`**. Lead with loss bps and FP rate; close technical answers with the business consequence.
+See `docs/roleplay_prep.md`. Open on **`ACC-100042`**. CRO gets loss bps and the $11–13M dual-margin;
+Head of Fraud Ops / Card Risk gets queue, FP rate, and minutes per case.
+
+## 11. Decisions made while building (AI + engineering)
+
+These are the points where the build changed, not a generic “we used AI.”
+
+1. **Serving:** first instinct was to score from the warehouse at request time. Auth SLA killed that.
+   Gold + score sync to Lakebase; hot path is `GET /risk/{account_id}`. Laptop-to-Lakebase p50 was
+   ~80–87 ms over the WAN, written down as **not** the SLA. The deployed app now times the lookup
+   in-region from its own service principal: **p50 2.1 ms, p99 under 4 ms** (`docs/evidence/05`).
+   Getting there surfaced a real bug: the app runtime's default `databricks-sdk` had no `database`
+   API, so the first in-app lookup failed until the SDK was pinned.
+2. **Governance:** a row filter on fused gold would have hidden `ACC-100042` from the app service
+   principal and broken the Command Center. Shipped **column masks + cyber/credit/shared_risk
+   schemas** instead; row filter is the next cut, on a table the app SP is granted to see.
+3. **GenAI model:** `AI_QUERY` against a Llama endpoint returned 404 in this workspace. Switched to
+   `databricks-claude-sonnet-4`. Narratives are conditioned on `reason_codes`; empty codes → no story.
+   GenAI is not the Reg B letter.
+4. **Model:** one GBM (`fused_gbm_v1`) instead of a model zoo so reason codes stay explainable.
+   Holdout ROC-AUC ~0.77, precision/recall at 0.5 are weak. Did **not** tune a demo-only metric
+   to look production-ready. Demo thread score 0.90 is the injected ATO-then-spend case; the
+   honest next step is a **shadow-mode** pilot, not a live decline change.
+5. **Features:** gold *is* the feature table. Did not stand up Feature Store v1 for a first slice.
